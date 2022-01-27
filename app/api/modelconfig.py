@@ -6,26 +6,26 @@ from app.api.errors import bad_request
 from app.models import ModelConfig
 
 
-@bp.route('/train/config/<int:config_id>', methods=['GET'])
+@bp.route("/train/config/<int:config_id>", methods=["GET"])
 def get_config(config_id):
     return jsonify(ModelConfig.query.get_or_404(config_id).to_dict())
 
 
-@bp.route('/train/config', methods=['GET'])
+@bp.route("/train/config", methods=["GET"])
 def get_configs():
-    page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 10, type=int), 100)
-    data = ModelConfig.to_collection_dict(ModelConfig.query, page, per_page, 'api.get_configs')
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 10, type=int), 100)
+    data = ModelConfig.to_collection_dict(ModelConfig.query, page, per_page, "api.get_configs")
 
     return jsonify(data)
 
 
-@bp.route('/train/config', methods=['POST'])
+@bp.route("/train/config", methods=["POST"])
 def create_config():
     data = request.get_json() or {}
 
-    if 'payment_type' not in data or 'segment' not in data:
-        return bad_request('Must include payment type and segment fields')
+    if "payment_type" not in data or "segment" not in data:
+        return bad_request("Must include payment type and segment fields")
 
     config = ModelConfig()
 
@@ -46,14 +46,18 @@ def create_config():
     return response
 
 
-@bp.route('/train/config/<int:config_id>', methods=['DELETE'])
+@bp.route("/train/config/<int:config_id>", methods=["DELETE"])
 def delete_config(config_id):
-    config = ModelConfig.query.get_or_404(config_id)
+    record = db.session.get(ModelConfig, config_id)
 
-    breakpoint()
+    if record is None:
+        response = jsonify("Record is not present")
+        response.status_code = 400
+    else:
+        db.session.delete(record)
+        db.session.commit()
 
-    config.delete()
+        response = jsonify(True)
+        response.status_code = 200
 
-    response = jsonify(True)
-
-    response.status_code
+    return response
