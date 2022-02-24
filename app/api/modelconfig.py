@@ -8,7 +8,12 @@ from app.models import ModelConfig
 
 @bp.route("/train/config/<int:config_id>", methods=["GET"])
 def get_config(config_id):
-    return jsonify(ModelConfig.query.get_or_404(config_id).to_dict())
+    record = ModelConfig.query.get(config_id)
+
+    if record is None:
+        return bad_request("Record is not available.")
+    else:
+        return record.to_dict()
 
 
 @bp.route("/train/config", methods=["GET"])
@@ -34,6 +39,9 @@ def create_config():
     except Exception as ex:
         return bad_request(str(ex))
 
+    db.session.add(config)
+    db.session.commit()
+
     try:
         db.session.add(config)
         db.session.commit()
@@ -51,8 +59,7 @@ def delete_config(config_id):
     record = db.session.get(ModelConfig, config_id)
 
     if record is None:
-        response = jsonify("Record is not present")
-        response.status_code = 400
+        return bad_request("Invalid record id")
     else:
         db.session.delete(record)
         db.session.commit()
